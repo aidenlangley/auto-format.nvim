@@ -65,7 +65,7 @@ require("auto-save").setup({
   -- timeout at all tends to be ugly - larger files, complex or poor formatters
   -- will struggle to format within whatever the default timeout
   -- `vim.lsp.buf.format` uses.
-  M.timeout = 2000,
+  timeout = 2000,
 
   -- These filetypes will not be formatted automatically.
   exclude_ft = {},
