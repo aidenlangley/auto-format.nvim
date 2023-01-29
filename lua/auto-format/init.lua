@@ -5,7 +5,6 @@ local config = require("auto-format.config")
 ---@param filetype string
 ---@return boolean
 local function excluded_ft(filetype, exclusion_list)
-  print("Checking " .. filetype .. " against list")
   for _, v in ipairs(exclusion_list) do
     return filetype == v
   end
@@ -19,23 +18,22 @@ local function supports_formatting(client)
 end
 
 ---@param filetype string
----@param client table
-local function get_filter(filetype, client)
+local function get_filter(filetype)
   local ok, sources = pcall(require, "null-ls.sources")
-  if ok then
-    local multiple_formatters = #sources.get_available(
-      filetype,
-      require("null-ls").methods.FORMATTING
-    ) > 0
-    local prefer_null_ls = not excluded_ft(filetype, config.prefer_lsp)
+  local prefer_null_ls = not excluded_ft(filetype, config.prefer_lsp)
 
-    if multiple_formatters and prefer_null_ls then
-      return client.name == "null-ls"
-    else
-      return supports_formatting(client)
+  if ok and prefer_null_ls then
+    return function(client)
+      if #sources.get_available(filetype, require("null-ls").methods.FORMATTING) > 0 then
+        return client.name == "null-ls"
+      else
+        return supports_formatting(client)
+      end
     end
   else
-    return supports_formatting(client)
+    return function(client)
+      return supports_formatting(client)
+    end
   end
 end
 
@@ -54,14 +52,12 @@ local function create_autocmd()
     group = vim.api.nvim_create_augroup(config.augroup_name, { clear = true }),
     pattern = "*",
     callback = function(args)
-      local bufnr = args.buf or vim.api.nvim_get_current_buf()
-      local filetype = vim.api.nvim_buf_get_option(bufnr, "filetype")
+      local ft = vim.api.nvim_buf_get_option(args.buf or vim.api.nvim_get_current_buf(), "filetype")
+      local valid_ft = not excluded_ft(ft, config.exclude_ft)
 
-      if not excluded_ft(filetype, config.exclude_ft) then
+      if valid_ft then
         format({
-          filter = function(client)
-            get_filter(filetype, client)
-          end,
+          filter = get_filter(ft),
           timeout_ms = config.timeout,
         })
       end

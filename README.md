@@ -1,26 +1,25 @@
-![Lines of code](https://img.shields.io/tokei/lines/git.sr.ht/~nedia/auto-save.nvim?style=flat-square)
+![Lines of code](https://img.shields.io/tokei/lines/git.sr.ht/~nedia/auto-format.nvim?style=flat-square)
 
 Open an issue [here](https://todo.sr.ht/~nedia/nvim).
 
-# AutoSave
+# AutoFormat
 
-Extremely simple auto save plugin.
+Extremely simple auto format plugin.
 
-All we're doing is creating an autocmd that runs on either `InsertLeave` and
-`TextChanged`, or `config.events` if defined.
+We're creating an autocmd that runs on `BufWritePre` - the primary function of
+this plugin is to prefer [`null-ls`](https://github.com/jose-elias-alvarez/null-ls.nvim)
+for formatting over our LSP client.
 
-It checks if the buffer is able to be modified, isn't readonly, has a buftype
-of `<empty>`, meaning it's not a terminal, and it's not a `Telescope` prompt
-for example. Finally, it checks if the buffer has been modified.
+On `BufWritePre` events, in the event that `null-ls` is present, we check if
+a `formatting` source has been registered for the filetype of the buffer being
+saved. If there is, we run the `null-ls` formatter, otherwise, we try our LSP
+client.
 
-If all conditions are met, we run `vim.cmd("w")` - if you've configured it to
-run silently, it'll be silent. If you'd like to run your own command, you can
-configure `save_cmd` or `save_fn`. If `save_cmd` is defined, this is preferred
-and `save_fn` is discarded.
-
-This plugin allows for some configuration, such as explicitly excluding some
-filetypes, or defering the save function to allow for other things to run
-beforehand.
+In case you need a larger `timeout` duration, you can configure it. If you'd
+prefer to not auto format certain filetypes, they can be defined. If you'd like
+to prefer LSP client formatting, then remove the `null-ls` formatting source
+honestly, but for some reason I've provided an option to `prefer_lsp` for some
+filetypes.
 
 # Installing
 
@@ -28,10 +27,10 @@ beforehand.
 
 ```lua
 {
-  "https://git.sr.ht/~nedia/auto-save.nvim",
-  event = "BufReadPost",
+  "https://git.sr.ht/~nedia/auto-format.nvim",
+  event = "BufWinEnter",
   config = function()
-    require("auto-save").setup()
+    require("auto-format").setup()
   end
 }
 ```
@@ -40,9 +39,9 @@ beforehand.
 
 ```lua
 {
-  "https://git.sr.ht/~nedia/auto-save.nvim",
+  "https://git.sr.ht/~nedia/auto-format.nvim",
   config = function()
-    require("auto-save").setup()
+    require("auto-format").setup()
   end
 }
 ```
@@ -50,61 +49,27 @@ beforehand.
 ## [vim-plug](https://github.com/junegunn/vim-plug)
 
 ```vim
-Plug 'https://git.sr.ht/~nedia/auto-save.nvim'
-lua require("auto-save").setup()
+Plug 'https://git.sr.ht/~nedia/auto-format.nvim'
+lua require("auto-format").setup()
 ```
 
 # Configuring
 
-Only a few config options can be provided - these are displayed below, as well
-as their default values.
-
 ```lua
 require("auto-save").setup({
   -- The name of the augroup.
-  augroup_name = "AutoSavePlug",
+  augroup_name = "AutoFormat",
 
-  -- The events in which to trigger an auto save.
-  events = { "InsertLeave", "TextChanged" },
+  -- If formatting takes longer than this amount of time, it will fail. Having no
+  -- timeout at all tends to be ugly - larger files, complex or poor formatters
+  -- will struggle to format within whatever the default timeout
+  -- `vim.lsp.buf.format` uses.
+  M.timeout = 2000,
 
-  -- If you'd prefer to silence the output of `save_fn`.
-  silent = true,
-
-  -- If you'd prefer to write a vim command.
-  save_cmd = nil,
-
-  -- What to do after checking if auto save conditions have been met.
-  save_fn = function()
-    local config = require("auto-save.config")
-    if config.save_cmd ~= nil then
-      vim.cmd(config.save_cmd)
-    elseif M.silent then
-      vim.cmd("silent! w")
-    else
-      vim.cmd("w")
-    end
-  end,
-
-  -- May define a timeout, or a duration to defer the save for - this allows
-  -- for formatters to run, for example if they're configured via an autocmd
-  -- that listens for `BufWritePre` event.
-  timeout = nil,
-
-  -- Define some filetypes to explicitly not save, in case our existing conditions
-  -- don't quite catch all the buffers we'd prefer not to write to.
+  -- These filetypes will not be formatted automatically.
   exclude_ft = {},
-})
-```
 
-Since I tend to use the mouse a fair bit (a habit I'm trying to break), my
-config is as follows - it includes the `BufLeave` event (sometimes you move to
-a buffer without leaving insert mode), and excludes my file explorer (just
-seems to break it! Must be trying to write to it and messing up some sequential
-operation):
-
-```lua
-require("auto-save").setup({
-  events = { "InsertLeave", "BufLeave" },
-  exclude_ft = { "neo-tree" },
+  -- Prefer formatting via LSP for these filetypes.
+  prefer_lsp = {},
 })
 ```
