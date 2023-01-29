@@ -1,3 +1,4 @@
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/aidenlangley/auto-format.nvim?style=flat-square)
 ![Lines of code](https://img.shields.io/tokei/lines/git.sr.ht/~nedia/auto-format.nvim?style=flat-square)
 
 Open an issue [here](https://todo.sr.ht/~nedia/nvim) | mirrored on [GitHub](https://github.com/aidenlangley/auto-format.nvim)
