@@ -6,8 +6,11 @@ local config = require("auto-format.config")
 ---@return boolean
 local function excluded_ft(filetype, exclusion_list)
   for _, v in ipairs(exclusion_list) do
-    return filetype == v
+    if filetype == v then
+      return true
+    end
   end
+
   return false
 end
 
