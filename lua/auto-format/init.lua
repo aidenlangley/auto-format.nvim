@@ -58,7 +58,7 @@ local function create_autocmd()
       local ft = vim.api.nvim_buf_get_option(args.buf or vim.api.nvim_get_current_buf(), "filetype")
       local valid_ft = not excluded_ft(ft, config.exclude_ft)
 
-      if ft and valid_ft then
+      if valid_ft then
         format({
           filter = get_filter(ft),
           timeout_ms = config.timeout,
