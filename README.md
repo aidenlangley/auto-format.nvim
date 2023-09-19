@@ -57,7 +57,7 @@ lua require("auto-format").setup()
 # Configuring
 
 ```lua
-require("auto-save").setup({
+require("auto-format").setup({
   -- The name of the augroup.
   augroup_name = "AutoFormat",
 
